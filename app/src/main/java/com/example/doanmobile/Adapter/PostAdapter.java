@@ -84,8 +84,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.ViewHolder>{
         publisherInfo(holder.image_profile , holder.username , holder.publisher , post.getPublisher());
         isLikes(post.getPostid() , holder.like);
         noLikes(holder.likes , post.getPostid());
-//        getComments(post.getPostid() , holder.comments);
-//        isSaved(post.getPostid() , holder.save);
 
         holder.image_profile.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -136,18 +134,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.ViewHolder>{
             }
         });
 
-//        holder.save.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                if (holder.save.getTag().equals("save")){
-//                    FirebaseDatabase.getInstance().getReference().child("Saves").child(firebaseUser.getUid())
-//                            .child(post.getPostid()).setValue(true);
-//                } else {
-//                    FirebaseDatabase.getInstance().getReference().child("Saves").child(firebaseUser.getUid())
-//                            .child(post.getPostid()).removeValue();
-//                }
-//            }
-//        });
 
         holder.likes.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -155,20 +141,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.ViewHolder>{
                 Intent intent = new Intent(mContext, FollowersActivity.class);
                 intent.putExtra("id", post.getPostid());
                 intent.putExtra("title", "Likes");
-                mContext.startActivity(intent);
-            }
-        });
-
-
-
-
-
-        holder.likes.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(mContext , FollowersActivity.class);
-                intent.putExtra("id" , post.getPostid());
-                intent.putExtra("title" , "Likes");
                 mContext.startActivity(intent);
             }
         });
@@ -244,7 +216,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.ViewHolder>{
         public TextView username;
         public TextView likes;
         public TextView publisher;
-        public EditText description;
+        public TextView description;
         public TextView comments;
 
         public ViewHolder(@NonNull View itemView) {
@@ -264,45 +236,30 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.ViewHolder>{
             comments = itemView.findViewById(R.id.comments);
         }
     }
-
-//    private void getComments(String postid , final TextView comments){
-//
-//        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Comments").child(postid);
-//
-//        reference.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                comments.setText("View All " + dataSnapshot.getChildrenCount() + " Comments");
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//            }
-//        });
-//
-//    }
-
     private void isLikes (String postid , final ImageView imageView) {
         final FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-
-        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Likes").child(postid);
-
-        reference.addValueEventListener(new ValueEventListener() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference documentReference = db.collection("Likes").document(postid);
+        documentReference.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (dataSnapshot.child(firebaseUser.getUid()).exists()){
-                    imageView.setImageResource(R.drawable.ic_liked);
-                    imageView.setTag("liked");
+            public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    DocumentSnapshot document = task.getResult();
+                    if (document.exists()) {
+                        // Nếu người dùng đã thích bài đăng, đặt hình ảnh là "liked"
+                        if (document.contains(firebaseUser.getUid())) {
+                            imageView.setImageResource(R.drawable.ic_liked);
+                            imageView.setTag("liked");
+                        } else {
+                            // Nếu người dùng chưa thích bài đăng, đặt hình ảnh là "like"
+                            imageView.setImageResource(R.drawable.ic_heart);
+                            imageView.setTag("like");
+                        }
+                    }
                 } else {
-                    imageView.setImageResource(R.drawable.ic_heart);
-                    imageView.setTag("like");
+                    // Xử lý trường hợp không thành công, có thể thông báo cho người dùng hoặc xử lý lỗi khác tùy theo yêu cầu của bạn
+
                 }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
             }
         });
 
@@ -314,20 +271,20 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.ViewHolder>{
 
         HashMap<String, Object> notificationData = new HashMap<>();
         notificationData.put("userid", firebaseUser.getUid());
-        notificationData.put("text", "liked your post");
+        notificationData.put("text", "Đã thích bài viết của bạn.");
         notificationData.put("postid", postid);
         notificationData.put("ispost", true);
         notificationsRef.document(userid).set(notificationData)
                 .addOnSuccessListener(new OnSuccessListener<Void>() {
                     @Override
                     public void onSuccess(Void aVoid) {
-                        Log.d("TAG", "Notification added successfully");
+                        Log.d("TAG", "Thêm thông báo thành công");
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.e("TAG", "Error adding notification", e);
+                        Log.e("TAG", "Lỗi", e);
                     }
                 });
 
@@ -335,16 +292,23 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.ViewHolder>{
 
     private void noLikes (final TextView likes , String postid) {
 
-        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Likes").child(postid);
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        reference.addValueEventListener(new ValueEventListener() {
+        DocumentReference likesRef = db.collection("Likes").document(postid);
+        likesRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                likes.setText(dataSnapshot.getChildrenCount() + " likes");
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                if (documentSnapshot.exists()) {
+                    long likeCount = documentSnapshot.getData().size();
+                    likes.setText(likeCount + " likes");
+                } else {
+                    likes.setText("0 likes");
+                }
             }
-
+        }).addOnFailureListener(new OnFailureListener() {
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
+            public void onFailure(@NonNull Exception e) {
+
 
             }
         });
@@ -369,30 +333,30 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.ViewHolder>{
         });
     }
 
-//    private void isSaved (final String postid , final ImageView imageView) {
-//        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
-//
-//        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Saves")
-//                .child(firebaseUser.getUid());
-//
-//        reference.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                if (dataSnapshot.child(postid).exists()){
-//                    imageView.setImageResource(R.drawable.ic_save_black);
-//                    imageView.setTag("saved");
-//                } else {
-//                    imageView.setImageResource(R.drawable.ic_saver_black);
-//                    imageView.setTag("save");
-//                }
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//            }
-//        });
-//    }
+    private void isSaved (final String postid , final ImageView imageView) {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Saves")
+                .child(firebaseUser.getUid());
+
+        reference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.child(postid).exists()){
+                    imageView.setImageResource(R.drawable.ic_save);
+                    imageView.setTag("saved");
+                } else {
+                    imageView.setImageResource(R.drawable.ic_save);
+                    imageView.setTag("save");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
 
     private void editPost (final String postid) {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(mContext);

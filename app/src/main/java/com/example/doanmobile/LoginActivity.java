@@ -19,6 +19,8 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -27,7 +29,7 @@ public class LoginActivity extends AppCompatActivity {
     private EditText email;
     private EditText password;
     private Button login;
-    private TextView txt_signup;
+    private TextView txt_signup,txt_forgot_password;
 
     private FirebaseAuth auth;
     @Override
@@ -39,9 +41,16 @@ public class LoginActivity extends AppCompatActivity {
         password = findViewById(R.id.password);
         login = findViewById(R.id.login);
         txt_signup = findViewById(R.id.txt_signup);
+        txt_forgot_password = findViewById(R.id.txt_forgot_password);
 
         auth = FirebaseAuth.getInstance();
 
+        txt_forgot_password.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(LoginActivity.this,ForgotPasswordActivity.class));
+            }
+        });
         txt_signup.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -54,6 +63,7 @@ public class LoginActivity extends AppCompatActivity {
                 final ProgressDialog pd = new ProgressDialog(LoginActivity.this);
                 String str_email = email.getText().toString();
                 String str_password = password.getText().toString();
+
 
                 if (TextUtils.isEmpty(str_email) || TextUtils.isEmpty(str_password)){
                     Toast.makeText(LoginActivity.this, "Không được để trống !", Toast.LENGTH_LONG).show();

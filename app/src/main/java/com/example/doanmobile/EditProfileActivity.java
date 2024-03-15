@@ -5,6 +5,8 @@ import static androidx.constraintlayout.helper.widget.MotionEffect.TAG;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
@@ -78,41 +80,21 @@ public class EditProfileActivity extends AppCompatActivity {
         tv_change = findViewById(R.id.tv_change);
         fullname = findViewById(R.id.fullname);
         username = findViewById(R.id.username);
-//        username.setEnabled(false);
         bio = findViewById(R.id.bio);
-
-//        Toast.makeText(EditProfileActivity.this, "Bạn không thể thay đổi username.", Toast.LENGTH_SHORT).show();
 
         firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         storageRef = FirebaseStorage.getInstance().getReference("uploads");
 
-//        DatabaseReference reference = FirebaseDatabase.getInstance().getReference("Users").child(firebaseUser.getUid());
-//        reference.addValueEventListener(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                User user = dataSnapshot.getValue(User.class);
-//                fullname.setText(user.getFullname());
-//                username.setText(user.getUsername());
-//                bio.setText(user.getBio());
-//                Glide.with(EditProfileActivity.this)
-//                        .load(user.getImageurl())
-//                        .apply(RequestOptions.placeholderOf(R.drawable.default_avatar))
-//                        .into(image_profile);
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//            }
-//        });
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         DocumentReference userRef = db.collection("Users").document(firebaseUser.getUid());
 
         userRef.addSnapshotListener(new EventListener<DocumentSnapshot>() {
             @Override
             public void onEvent(@Nullable DocumentSnapshot documentSnapshot, @Nullable FirebaseFirestoreException e) {
+
+
                 if (e != null) {
-                    Log.w(TAG, "Listen failed.", e);
+                    Log.w(TAG, "Lỗi", e);
                     return;
                 }
 
@@ -128,7 +110,7 @@ public class EditProfileActivity extends AppCompatActivity {
                                 .into(image_profile);
                     }
                 } else {
-                    Log.d(TAG, "No such document");
+                    Log.d(TAG, "Lỗi");
                 }
             }
         });
@@ -161,17 +143,16 @@ public class EditProfileActivity extends AppCompatActivity {
         save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                updateProfile(fullname.getText().toString() ,
-                        username.getText().toString() ,
+                updateProfile(fullname.getText().toString(),
+                        username.getText().toString(),
                         bio.getText().toString());
-                startActivity(new Intent(EditProfileActivity.this, ProfileFragment.class));
             }
         });
     }
 
     private void updateProfile(String fullname, String username, String bio) {
 
-        if(fullname.isEmpty() || username.isEmpty()){
+        if (fullname.isEmpty() || username.isEmpty()) {
             Toast.makeText(this, "Không được để trống thông tin! ", Toast.LENGTH_SHORT).show();
         }
         FirebaseFirestore db = FirebaseFirestore.getInstance();
@@ -198,26 +179,26 @@ public class EditProfileActivity extends AppCompatActivity {
 
     }
 
-    private String getFileExtension (Uri uri){
+    private String getFileExtension(Uri uri) {
         ContentResolver contentResolver = getContentResolver();
         MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
 
         return mimeTypeMap.getExtensionFromMimeType(contentResolver.getType(uri));
     }
 
-    private void uploadImage(){
+    private void uploadImage() {
         final ProgressDialog pd = new ProgressDialog(this);
         pd.setMessage("Đang tải lên...");
         pd.show();
 
-        if (mImageUri != null){
+        if (mImageUri != null) {
             final StorageReference filereference = storageRef.child(System.currentTimeMillis() + "." + getFileExtension(mImageUri));
 
             uploadTask = filereference.putFile(mImageUri);
             uploadTask.continueWithTask(new Continuation() {
                 @Override
                 public Object then(@NonNull Task task) throws Exception {
-                    if (!task.isSuccessful()){
+                    if (!task.isSuccessful()) {
                         throw task.getException();
                     }
                     return filereference.getDownloadUrl();
@@ -225,7 +206,7 @@ public class EditProfileActivity extends AppCompatActivity {
             }).addOnCompleteListener(new OnCompleteListener<Uri>() {
                 @Override
                 public void onComplete(@NonNull Task<Uri> task) {
-                    if (task.isSuccessful()){
+                    if (task.isSuccessful()) {
                         Uri downloadUri = task.getResult();
                         String myUrl = downloadUri.toString();
 
@@ -266,30 +247,17 @@ public class EditProfileActivity extends AppCompatActivity {
         }
     }
 
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//
-//        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK){
-//            CropImage.ActivityResult result = CropImage.getActivityResult(data);
-//            mImageUri = result.getUri();
-//
-//            uploadImage();
-//        } else {
-//            Toast.makeText(this, "Something gone wrong!", Toast.LENGTH_SHORT).show();
-//        }
-//    }
-@Override
-protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-    super.onActivityResult(requestCode, resultCode, data);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
 
-    if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
-        mImageUri = data.getData();
-        image_profile.setImageURI(mImageUri);
-    } else {
-        Toast.makeText(this, "Đã xảy ra lỗi! ", Toast.LENGTH_SHORT).show();
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            mImageUri = data.getData();
+            image_profile.setImageURI(mImageUri);
+        } else {
+            Toast.makeText(this, "Đã xảy ra lỗi! ", Toast.LENGTH_SHORT).show();
+        }
     }
-}
 
 
 }

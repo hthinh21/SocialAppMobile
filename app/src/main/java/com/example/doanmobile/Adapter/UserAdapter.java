@@ -43,7 +43,7 @@ import java.util.List;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
-public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
+public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     private Context mContext;
     private List<User> mUsers;
     private boolean isFragment;
@@ -59,7 +59,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(mContext).inflate(R.layout.user_item , parent , false);
+        View view = LayoutInflater.from(mContext).inflate(R.layout.user_item, parent, false);
         return new UserAdapter.ViewHolder(view);
     }
 
@@ -89,8 +89,8 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
 
                     ((FragmentActivity) mContext).getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, new ProfileFragment()).commit();
                 } else {
-                    Intent intent = new Intent(mContext , MainActivity.class);
-                    intent.putExtra("publisherid" , user.getId());
+                    Intent intent = new Intent(mContext, MainActivity.class);
+                    intent.putExtra("publisherid", user.getId());
                     mContext.startActivity(intent);
                 }
             }
@@ -105,20 +105,56 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
                 DocumentReference followersRef = db.collection("Follow").document(user.getId())
                         .collection("followers").document(firebaseUser.getUid());
 
-                followingRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if(task.isSuccessful()){
-                            DocumentSnapshot documentSnapshot = task.getResult();
-                            if(documentSnapshot.exists()){
 
-                            }
+                if (holder.btn_follow.getText().toString().equals("follow")) {
+                    followingRef.set(new HashMap<String, Object>())
+                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+                                    followersRef.set(new HashMap<String, Object>())
+                                            .addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                @Override
+                                                public void onSuccess(Void aVoid) {
+                                                    addNotifications(user.getId());
+                                                }
+                                            })
+                                            .addOnFailureListener(new OnFailureListener() {
+                                                @Override
+                                                public void onFailure(@NonNull Exception e) {
+
+                                                }
+                                            });
+                                }
+                            })
+                            .addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+
+                                }
+                            });
+                } else {
+                    followingRef.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                        @Override
+                        public void onSuccess(Void aVoid) {
+                            followersRef.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                @Override
+                                public void onSuccess(Void aVoid) {
+
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+
+                                }
+                            });
                         }
+                    }).addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
 
-                    }
-                });
-
-
+                        }
+                    });
+                }
 
                 if (holder.btn_follow.getText().toString().equals("follow")){
                     FirebaseDatabase.getInstance().getReference().child("Follow").child(firebaseUser.getUid())
@@ -135,6 +171,39 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
                     FirebaseDatabase.getInstance().getReference().child("Follow").child(user.getId())
                             .child("followers").child(firebaseUser.getUid()).removeValue();
                 }
+//                followingRef.get().addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
+//                    @Override
+//                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
+//                        if(task.isSuccessful()){
+//                            DocumentSnapshot documentSnapshot = task.getResult();
+//                            if(documentSnapshot.exists()){
+//                                followingRef.delete();
+//                                followersRef.delete();
+//                            } else {
+//
+//                            }
+//                        } else {
+//                            Log.d(TAG, "Error getting document: ", task.getException());
+//                        }
+//
+//
+//
+//                    }
+//                });
+
+//                FirebaseFirestore db = FirebaseFirestore.getInstance();
+//                if(holder.btn_follow.getText().toString().equals("follow")){
+//
+//                    db.collection("Follow").document(firebaseUser.getUid())
+//                            .collection("following").document(user.getId());
+//                    db.collection("Follow").document(user.getId()).collection("Followers");
+//                }
+//                else{
+//                    db.collection("Follow").document()
+//                }
+
+
+//
             }
         });
 
@@ -145,11 +214,11 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
         CollectionReference notificationsRef = db.collection("Notifications").document(userid)
                 .collection("Notifications");
 
-        HashMap<String , Object> hashMap = new HashMap<>();
-        hashMap.put("userid" , firebaseUser.getUid());
-        hashMap.put("text" , "Đã bắt đầu theo dõi bạn.");
-        hashMap.put("postid" , "");
-        hashMap.put("ispost" , false);
+        HashMap<String, Object> hashMap = new HashMap<>();
+        hashMap.put("userid", firebaseUser.getUid());
+        hashMap.put("text", "Đã bắt đầu theo dõi bạn.");
+        hashMap.put("postid", "");
+        hashMap.put("ispost", false);
         notificationsRef.add(hashMap);
     }
 
@@ -175,7 +244,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
         }
     }
 
-//    private void isFollowed (final String userid , final Button button) {
+    //    private void isFollowed (final String userid , final Button button) {
 //        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Follow").child(firebaseUser.getUid()).child("following");
 //        reference.addValueEventListener(new ValueEventListener() {
 //            @Override
@@ -193,25 +262,26 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder>{
 //            }
 //        });
 //    }
-private void isFollowed(final String userid, final Button button) {
-    FirebaseFirestore db = FirebaseFirestore.getInstance();
-    DocumentReference followingRef = db.collection("Follow").document(firebaseUser.getUid()).collection("following").document(userid);
+    private void isFollowed(final String userid, final Button button) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference followingRef = db.collection("Follow").document(firebaseUser.getUid())
+                .collection("following").document(userid);
 
-    followingRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
-        @Override
-        public void onSuccess(DocumentSnapshot documentSnapshot) {
-            if (documentSnapshot.exists()) {
-                button.setText("following");
-            } else {
-                button.setText("follow");
+        followingRef.get().addOnSuccessListener(new OnSuccessListener<DocumentSnapshot>() {
+            @Override
+            public void onSuccess(DocumentSnapshot documentSnapshot) {
+                if (documentSnapshot.exists()) {
+                    button.setText("following");
+                } else {
+                    button.setText("follow");
+                }
             }
-        }
-    }).addOnFailureListener(new OnFailureListener() {
-        @Override
-        public void onFailure(@NonNull Exception e) {
-            // Handle failure
-            Log.e(TAG, "Error checking following status: ", e);
-        }
-    });
-}
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                // Handle failure
+                Log.e(TAG, "Error checking following status: ", e);
+            }
+        });
+    }
 }

@@ -30,6 +30,7 @@ import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -59,14 +60,6 @@ public class HomeFragment extends Fragment {
         postAdapter = new PostAdapter(getContext(), postList);
         recyclerView.setAdapter(postAdapter);
 
-//        recyclerView_story = view.findViewById(R.id.recycler_view_story);
-//        recyclerView_story.setHasFixedSize(true);
-//        LinearLayoutManager linearLayoutManager1 = new LinearLayoutManager(getContext() ,
-//                LinearLayoutManager.HORIZONTAL , false);
-//        recyclerView_story.setLayoutManager(linearLayoutManager1);
-
-
-        progressBar = view.findViewById(R.id.progress_circular);
         readPosts();
         checkFollowing();
 
@@ -95,35 +88,20 @@ public class HomeFragment extends Fragment {
     }
 
     private void readPosts() {
-        if (followingList == null) {
-            // Nếu followingList chưa sẵn sàng, không thực hiện gì cả
-            return;
-        }
-
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("Posts")
-                .addSnapshotListener(getActivity(), (value, error) -> {
-                    if (error != null) {
-                        return;
+        db.collection("Posts").get().addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                if(task.isSuccessful()){
+                    for (DocumentSnapshot document : task.getResult().getDocuments()) {
+                        Post post = document.toObject(Post.class);
+                        postList.add(post);
                     }
-                    if (value != null) {
-                        postList.clear();
-                        for (DocumentChange dc : value.getDocumentChanges()) {
-                            if (dc.getType() == DocumentChange.Type.ADDED) {
-                                Post post = dc.getDocument().toObject(Post.class);
-                                for (String id : followingList) {
-                                    if (post.getPublisher().equals(id)) {
-                                        postList.add(post);
-                                        postAdapter.notifyDataSetChanged();
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        progressBar.setVisibility(View.GONE);
-                    }
-                });
+                    Collections.reverse(postList);
+                    postAdapter.notifyDataSetChanged();
+                }
+            }
+        });
     }
-
 
 }

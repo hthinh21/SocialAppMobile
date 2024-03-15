@@ -78,35 +78,10 @@ public class FollowersActivity extends AppCompatActivity {
                 getFollowers();
                 break;
 
-//            case "views":
-//                getViews();
-//                break;
+
         }
-
     }
 
-    private void getViews() {
-        db.collection("Story")
-                .document(id)
-                .collection("views")
-                .get()
-                .addOnSuccessListener(new OnSuccessListener<QuerySnapshot>() {
-                    @Override
-                    public void onSuccess(QuerySnapshot queryDocumentSnapshots) {
-                        idList.clear();
-                        for (DocumentSnapshot snapshot : queryDocumentSnapshots) {
-                            idList.add(snapshot.getId());
-                        }
-                        showUsers();
-                    }
-                })
-                .addOnFailureListener(new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        // Handle error
-                    }
-                });
-    }
 
     private void getLikes() {
         db.collection("Likes")

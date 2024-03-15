@@ -336,7 +336,7 @@ public class ProfileFragment extends Fragment {
                                 Post post = document.toObject(Post.class);
                                 postList.add(post);
                             }
-//                            Collections.reverse(postList);
+                            Collections.reverse(postList);
                             myFotoAdapter.notifyDataSetChanged();
 
                         }
